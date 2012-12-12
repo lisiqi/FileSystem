@@ -6,6 +6,10 @@ package filesystem;
 
 import javax.swing.*;
 import java.awt.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 /**
  *
@@ -19,9 +23,13 @@ public class FileSystemGUI extends JFrame{
     JTextField pathField = new JTextField("X:\\");
     
     //Center Component
-    JPanel middlePanel = new JPanel();
-    JTree pathTree = new JTree();
+    JPanel middlePanel = new JPanel();   
     JTextArea editArea = new JTextArea();
+    DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("root");
+    DefaultTreeModel treeModel = new DefaultTreeModel(rootNode,true);
+    TreePath treePath;
+    JTree jTree = new JTree(rootNode);
+    JScrollPane treeScrollPane = new JScrollPane(jTree);
     JScrollPane editAreaScrollPane = new JScrollPane(editArea,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     
     //Lower Component
@@ -62,7 +70,18 @@ public class FileSystemGUI extends JFrame{
         
         BorderLayout middleBorderLayout = new BorderLayout();
         middlePanel.setLayout(middleBorderLayout);
-        middlePanel.add(pathTree,BorderLayout.EAST);
+        jTree.setAutoscrolls(true);
+        //pathTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        jTree.setPreferredSize(new Dimension(100, 380));
+        jTree.setEditable(true);
+        rootNode.setAllowsChildren(true);
+        DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("example");
+        exampleNode.setAllowsChildren(false);
+        rootNode.add(exampleNode);
+        jTree.setModel(treeModel);
+        jTree.setShowsRootHandles(rootPaneCheckingEnabled);
+        //treeScrollPane.getViewport().add(jTree,null);
+        middlePanel.add(jTree,BorderLayout.WEST);
         middlePanel.add(editAreaScrollPane,BorderLayout.CENTER);
         editArea.setLineWrap(true);
         editArea.setWrapStyleWord(true);
@@ -84,7 +103,7 @@ public class FileSystemGUI extends JFrame{
     
     private void setLookAndFeel(){
         try{
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");    
         } catch(ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException exc) {
         // ignore error
         }
