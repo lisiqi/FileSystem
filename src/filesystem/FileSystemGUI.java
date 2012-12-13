@@ -16,6 +16,11 @@ import javax.swing.tree.TreeSelectionModel;
  * @author lenovo
  */
 public class FileSystemGUI extends JFrame{
+    
+    final int WINDOW_SIZE_WIDTH = 500;
+    final int WINDOW_SIZE_HEIGHT = 500;
+    final int TREE_SIZE_WIDTH = 100;
+    final int TREE_SIZE_HEIGHT = 400;
 
     //Upper Component
     JPanel upperPanel = new JPanel();
@@ -53,7 +58,7 @@ public class FileSystemGUI extends JFrame{
     private void drawGUI(){
         //General Setting
         setLookAndFeel();
-        setSize(500,500);
+        setSize(WINDOW_SIZE_HEIGHT,WINDOW_SIZE_WIDTH);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
         
@@ -72,7 +77,7 @@ public class FileSystemGUI extends JFrame{
         middlePanel.setLayout(middleBorderLayout);
         jTree.setAutoscrolls(true);
         //pathTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        jTree.setPreferredSize(new Dimension(100, 380));
+        jTree.setPreferredSize(new Dimension(TREE_SIZE_WIDTH, TREE_SIZE_HEIGHT));
         jTree.setEditable(true);
         rootNode.setAllowsChildren(true);
         DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("example");
