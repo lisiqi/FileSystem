@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package filesystem;
+package edu.tj.se.java.os.filesystem;
 
 import java.util.Date;
 
@@ -13,12 +13,14 @@ import java.util.Date;
  */
 public class Memory {
     final int MAX_SIZE = 128;
-    Data block[];
-    FAT fat[];
-
+    public Data block[];
+    public FAT fat[];
+    public FCB fcb[];
+    
     public Memory() {
         block = new Data[MAX_SIZE];
         fat = new FAT[MAX_SIZE];
+        fcb = new FCB[MAX_SIZE];
         for(int i = 0;i < MAX_SIZE;i++){
             block[i] = new Data();
             fat[i] = new FAT();
@@ -28,7 +30,7 @@ public class Memory {
 }
 class Data{
     final int MAX_FILE_LENGTH  = 256;
-    char data[];
+    public char data[];
 
     public Data() {
         data = new char[MAX_FILE_LENGTH];
@@ -36,9 +38,9 @@ class Data{
 }
 
 class FAT{
-    boolean isFATUsed;
-    int nextDataPosition;
-    int currentDataPosition;
+    public boolean isFATUsed;
+    public int nextDataPosition;
+    public int currentDataPosition;
 
     public FAT() {
         
@@ -53,12 +55,12 @@ class FAT{
 
 
 class FCB{
-    String fileName;
-    String filePath;
-    int size;
-    String createTime;
-    String modifiedTime;
-    int startBlock;
+    public String fileName;
+    public String filePath;
+    public int size;
+    public String createTime;
+    public String modifiedTime;
+    public int startBlock;
 
     public FCB() {
         startBlock = -1;
