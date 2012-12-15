@@ -8,9 +8,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellEditor;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
@@ -20,7 +24,7 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @author lenovo
  */
-public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectionListener{
+public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectionListener,MouseListener{
     
     final int WINDOW_SIZE_WIDTH = 500;
     final int WINDOW_SIZE_HEIGHT = 500;
@@ -30,17 +34,22 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     //Upper Component
     static JPanel upperPanel = new JPanel();
     static JLabel pathLabel = new JLabel("Path:");
-    static JTextField pathField = new JTextField("[X:\\]");
+    static JTextField pathField = new JTextField("[X:]");
     
     //Center Component
     static JPanel middlePanel = new JPanel();   
     static JTextArea editArea = new JTextArea();
-    static DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("X:\\");
+    static DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("X:");
     static DefaultTreeModel treeModel = new DefaultTreeModel(rootNode,true);
     static TreePath treePath;
     static JTree jTree = new JTree(rootNode);
     static JScrollPane treeScrollPane = new JScrollPane(jTree);
     static JScrollPane editAreaScrollPane = new JScrollPane(editArea,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    static JPopupMenu popupMenuFile = new JPopupMenu();
+    static JPopupMenu popupMenuFolder = new JPopupMenu();
+    static JMenuItem propertyItem = new JMenuItem("Property->");
+    static JMenuItem newFileItem = new JMenuItem("New File->");
+    static JMenuItem newFolderItem = new JMenuItem("New Folder->");
     
     //Lower Component
     static JPanel lowerPanel = new JPanel();
@@ -83,7 +92,8 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         BorderLayout middleBorderLayout = new BorderLayout();
         middlePanel.setLayout(middleBorderLayout);
         jTree.setAutoscrolls(true);
-        //pathTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        jTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        jTree.setCellEditor(new DefaultTreeCellEditor(jTree, new DefaultTreeCellRenderer()));
         jTree.setPreferredSize(new Dimension(TREE_SIZE_WIDTH, TREE_SIZE_HEIGHT));
         jTree.setEditable(false);
         rootNode.setAllowsChildren(true);
@@ -116,6 +126,12 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         lowerPanel.add(formatButton);
         lowerPanel.add(quitButton);
         add(lowerPanel,BorderLayout.SOUTH);
+        
+        popupMenuFolder.add(propertyItem);
+        popupMenuFolder.add(newFileItem);
+        popupMenuFolder.add(newFolderItem);
+             
+        popupMenuFile.add(propertyItem);
     }
     
     private void setLookAndFeel(){
@@ -135,6 +151,10 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         deleteButton.addActionListener(this);
         formatButton.addActionListener(this);
         quitButton.addActionListener(this);
+        propertyItem.addActionListener(this);
+        newFileItem.addActionListener(this);
+        newFolderItem.addActionListener(this);
+        jTree.addMouseListener(this);
     }
     
     @Override
@@ -172,6 +192,13 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 fileSystem.quitFile();
                 break;
         }
+        if(event.getSource() == propertyItem){
+            fileSystem.fileProperty(node,treePath);
+        }else if(event.getSource() == newFileItem){
+            fileSystem.newFile(node, treePath);
+        }else if(event.getSource() == newFolderItem){
+            fileSystem.newFolder(node, treePath);
+        }
     }
     
     @Override
@@ -189,19 +216,62 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 newFolderButton.setEnabled(true);
                 editArea.setEditable(false);
             }
+            treePath = new TreePath(treeModel.getPathToRoot(node));
+            int blockPosition = fileSystem.getBlockPosition(treePath);  
+            FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
+            String fileBlocktext = fileBlock.data.text;
+            String treePathToString = treePath.toString();
+            showPath(treePathToString);         
+            editArea.setText(fileBlocktext);
         } catch (NullPointerException e) {
         }   
         
-        treePath = new TreePath(treeModel.getPathToRoot(node));
-        int blockPosition = fileSystem.getBlockPosition(treePath);  
-        FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
-        String fileBlocktext = fileBlock.data.text;
-        String treePathToString = treePath.toString();
-        treePathToString = treePathToString.replace(",", "");
-        pathField.setText(treePathToString); 
-        editArea.setText(fileBlocktext);
+        
     }
 
+    @Override
+    public void mousePressed(MouseEvent event){
+        try {
+            TreePath path = jTree.getPathForLocation(event.getX(), event.getY());
+        jTree.setSelectionPath(path);
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+        if (event.getButton() == 3 ) {
+            if (node.getAllowsChildren()) {
+                popupMenuFolder.show(jTree, event.getX(), event.getY());
+            }else{
+                popupMenuFile.show(jTree, event.getX(), event.getY());
+            }
+        }
+        } catch (NullPointerException e) {
+        }   
+    }
+    
+    @Override
+    public void mouseExited(MouseEvent event){
+        
+    }
+    
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+    
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    
+    private void showPath(String path){
+        path = path.replace(", ", "\\");
+        pathField.setText(path);
+    }
+    
     static String getScreenText() {
         String text = editArea.getText();
         return text;

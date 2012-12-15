@@ -145,6 +145,7 @@ public class FileSystem {
         int blockPosition = getBlockPosition(path);
         FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
         String frameTitle = fileBlock.fcb.fileName;
+        int childCount = node.getChildCount();
         
         JFrame frame = new JFrame(frameTitle);
         frame.setSize(500, 300);
@@ -155,19 +156,22 @@ public class FileSystem {
         
         JLabel general = new JLabel("[Property]");
         JLabel fileName = new JLabel("Name:" + fileBlock.fcb.fileName);
-        JLabel blockNumber = new JLabel("Block number:" + String.valueOf(fileBlock.fcb.startBlock));
-        JLabel fileSize = new JLabel("Size:" + String.valueOf(fileBlock.fcb.size));
+        JLabel blockNumber = new JLabel("Block Address:" + String.valueOf(fileBlock.fcb.startBlock));      
         JLabel createTime = new JLabel("Create Time:" + fileBlock.fcb.createTime);
                
         frame.add(general);
-        frame.add(fileName);
-        frame.add(fileSize);
+        frame.add(fileName);        
         frame.add(blockNumber);
         frame.add(createTime);
         
         if (!node.getAllowsChildren()) {
             JLabel modifiedTime = new JLabel("Modified Time:" + fileBlock.fcb.modifiedTime);
+            JLabel fileSize = new JLabel("Size:" + String.valueOf(fileBlock.fcb.size));
             frame.add(modifiedTime);
+            frame.add(fileSize);
+        }else{
+            JLabel itemCount = new JLabel("Items:" + childCount);
+            frame.add(itemCount);
         }
             
     }
