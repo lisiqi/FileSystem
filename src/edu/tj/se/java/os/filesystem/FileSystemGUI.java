@@ -143,7 +143,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         treePath = new TreePath(treeModel.getPathToRoot(node));
         switch(actionCommand){
             case "Property":
-                fileSystem.fileProperty();
+                fileSystem.fileProperty(node,treePath);
                 break;
             case "Save":
                 fileSystem.saveFile(node,treePath);
@@ -172,6 +172,8 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     @Override
     public void valueChanged(TreeSelectionEvent se){
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)jTree.getLastSelectedPathComponent();
+        Memory memory = fileSystem.getMemory();
+        
         try {
             if(!node.getAllowsChildren()){
                 newFileButton.setEnabled(false);
@@ -184,9 +186,9 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
             }
         } catch (NullPointerException e) {
         }   
+        
         treePath = new TreePath(treeModel.getPathToRoot(node));
-        int blockPosition = fileSystem.getBlockPosition(treePath);
-        Memory memory = fileSystem.getMemory();
+        int blockPosition = fileSystem.getBlockPosition(treePath);  
         FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
         String fileBlocktext = fileBlock.data.text;
         String treePathToString = treePath.toString();
