@@ -12,6 +12,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -23,7 +24,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     
     final int WINDOW_SIZE_WIDTH = 500;
     final int WINDOW_SIZE_HEIGHT = 500;
-    final int TREE_SIZE_WIDTH = 100;
+    final int TREE_SIZE_WIDTH = 200;
     final int TREE_SIZE_HEIGHT = 400;
 
     //Upper Component
@@ -68,7 +69,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
         
-        //Partical Setting
+        //General Layout Setting
         BorderLayout borderLayout = new BorderLayout();
         setLayout(borderLayout);
         
@@ -140,7 +141,11 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     public void actionPerformed(ActionEvent event){
         String actionCommand = event.getActionCommand();
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)jTree.getLastSelectedPathComponent();
+        if (node == null) {
+            return;
+        }
         treePath = new TreePath(treeModel.getPathToRoot(node));
+        
         switch(actionCommand){
             case "Property":
                 fileSystem.fileProperty(node,treePath);
@@ -149,10 +154,10 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 fileSystem.saveFile(node,treePath);
                 break;
             case "New Folder":
-                fileSystem.newFolder();
+                fileSystem.newFolder(node,treePath);
                 break;
             case "New File":
-                fileSystem.newFile();
+                fileSystem.newFile(node,treePath);
                 break;
             case "Rename":
                 fileSystem.renameFile();
@@ -200,6 +205,13 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     static String getScreenText() {
         String text = editArea.getText();
         return text;
+    }
+    static DefaultTreeModel getTreeModel(){
+        return treeModel;
+    }
+    
+    static void insertNode(DefaultMutableTreeNode parent,DefaultMutableTreeNode children){
+        treeModel.insertNodeInto(children, parent, parent.getChildCount());
     }
     
     public static void main(String[] args) {
