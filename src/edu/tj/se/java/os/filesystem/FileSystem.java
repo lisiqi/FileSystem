@@ -13,16 +13,20 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTree;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+import sun.org.mozilla.javascript.internal.ast.ContinueStatement;
 
 /**
  *
  * @author lenovo
  */
-public class FileSystem {
+public class FileSystem{
     final int MAX_SIZE = 128;
     
     Memory memory = new Memory();
@@ -92,6 +96,8 @@ public class FileSystem {
         return -1;
     }
     
+    
+    
     /**
      *
      * @param name
@@ -105,30 +111,12 @@ public class FileSystem {
         return match;
     }
     
-    public boolean hasTheSameFolderNameInPath(String name,DefaultMutableTreeNode node,TreePath path){
+    public boolean hasTheSameNameInPath(String name,DefaultMutableTreeNode node,TreePath path,boolean isFile){
         DefaultTreeModel treeModel = FileSystemGUI.getTreeModel();
         if (node.getChildCount() >= 0) {
            for (Enumeration e = node.children(); e.hasMoreElements(); ) {
                DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)e.nextElement();
-               if (childNode.getAllowsChildren()) {
-                   TreePath childPath = new TreePath(treeModel.getPathToRoot(childNode));
-                   int blockPosition = getBlockPosition(childPath);
-                   FileBlock block = (FileBlock)memory.fileMap.get(blockPosition);
-                   if (block.fcb.fileName.equals(name)) {
-                       return true;
-                   }
-               }
-           }
-       }
-        return false;
-    }
-    
-    public boolean hasTheSameFileNameInPath(String name,DefaultMutableTreeNode node,TreePath path){
-        DefaultTreeModel treeModel = FileSystemGUI.getTreeModel();
-        if (node.getChildCount() >= 0) {
-           for (Enumeration e = node.children(); e.hasMoreElements(); ) {
-               DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)e.nextElement();
-               if (childNode.getAllowsChildren()) {
+               if ((childNode.getAllowsChildren() && !isFile) || ((!childNode.getAllowsChildren() && isFile))) {
                    TreePath childPath = new TreePath(treeModel.getPathToRoot(childNode));
                    int blockPosition = getBlockPosition(childPath);
                    FileBlock block = (FileBlock)memory.fileMap.get(blockPosition);
@@ -189,7 +177,7 @@ public class FileSystem {
         memory.fileMap.put(blockPosition, fileBlock);
     }
     
-    public void newFolder(DefaultMutableTreeNode node,TreePath path){
+    public void newItem(DefaultMutableTreeNode node,TreePath path,boolean isFile){
         String newFolderName = JOptionPane.showInputDialog(null, "Please input folder name");
         if (newFolderName == null) {
             JOptionPane.showMessageDialog(null, "Empty Operation!");
@@ -200,12 +188,14 @@ public class FileSystem {
         }else if(isIllegalName(newFolderName)){
             JOptionPane.showMessageDialog(null, "Only character and numbers can be used to be a folder name!");
             return;
-        }else if(hasTheSameFolderNameInPath(newFolderName, node, path)){
+        }else if(hasTheSameNameInPath(newFolderName, node, path,isFile)){
             JOptionPane.showMessageDialog(null, "Sorry, but the name exists in current path!");
             return;
         }else{
             DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(newFolderName);
-            newNode.setAllowsChildren(true);
+            if (!isFile) {
+                newNode.setAllowsChildren(true);
+            }  
             FileSystemGUI.insertNode(node, newNode);
             DefaultTreeModel model = FileSystemGUI.getTreeModel();
             path = new TreePath(model.getPathToRoot(newNode));
@@ -213,31 +203,30 @@ public class FileSystem {
         }
     }
     
-    public void newFile(DefaultMutableTreeNode node,TreePath path){
-        String newFileName = JOptionPane.showInputDialog(null, "Please input file name");
-        if (newFileName == null) {
-            JOptionPane.showMessageDialog(null, "Empty Operation!");
-            return;
-        }else if(newFileName.length() > MAX_SIZE){
-            JOptionPane.showMessageDialog(null, "The max length of a file name is 128!");
-            return;
-        }else if(isIllegalName(newFileName)){
-            JOptionPane.showMessageDialog(null, "Only character and numbers can be used to be a file name!");
-            return;
-        }else if(hasTheSameFileNameInPath(newFileName, node, path)){
-            JOptionPane.showMessageDialog(null, "Sorry, but the name exists in current path!");
-            return;
-        }else{
-            DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(newFileName);
-            newNode.setAllowsChildren(false);
-            FileSystemGUI.insertNode(node, newNode);
-            DefaultTreeModel model = FileSystemGUI.getTreeModel();
-            path = new TreePath(model.getPathToRoot(newNode));
-            addToMemory(newNode, path);
-        }
-    }
     
-    public void renameFile(){
+    public void renameFile(DefaultMutableTreeNode node,TreePath path,String newName){
+        boolean isFile,renameSucceed = false;
+        String tryAgain;
+        while(!renameSucceed){
+            if (newName == null) {
+                tryAgain = JOptionPane.showInputDialog(null, "Empty Operation!");
+                continue;
+            }else if(newName.length() > MAX_SIZE){
+                tryAgain = JOptionPane.showInputDialog(null, "The max length of a folder name is 128!");
+                return;
+            }else if(isIllegalName(newName)){
+                tryAgain = JOptionPane.showInputDialog(null, "Only character and numbers can be used to be a folder name!");
+                return;
+            }else if(hasTheSameNameInPath(newName, node, path,isFile)){
+                tryAgain = JOptionPane.showInputDialog(null, "Sorry, but the name exists in current path!");
+                return;
+            }
+        }
+        String newName = JOptionPane.showInputDialog(null, "Please input the new name.");
+        isFile = node.getAllowsChildren() ? false : true;
+        JTree jTree = FileSystemGUI.getJTree();
+        jTree.setEditable(true);
+            
         
     }
     

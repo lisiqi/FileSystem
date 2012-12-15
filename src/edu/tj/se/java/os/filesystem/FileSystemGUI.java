@@ -26,8 +26,8 @@ import javax.swing.tree.TreeSelectionModel;
  */
 public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectionListener,MouseListener{
     
-    final int WINDOW_SIZE_WIDTH = 500;
-    final int WINDOW_SIZE_HEIGHT = 500;
+    final int WINDOW_SIZE_WIDTH = 600;
+    final int WINDOW_SIZE_HEIGHT = 600;
     final int TREE_SIZE_WIDTH = 200;
     final int TREE_SIZE_HEIGHT = 400;
 
@@ -174,13 +174,13 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 fileSystem.saveFile(node,treePath);
                 break;
             case "New Folder":
-                fileSystem.newFolder(node,treePath);
+                fileSystem.newItem(node,treePath,false);
                 break;
             case "New File":
-                fileSystem.newFile(node,treePath);
+                fileSystem.newItem(node,treePath,true);
                 break;
             case "Rename":
-                fileSystem.renameFile();
+                fileSystem.renameFile(node,treePath);
                 break;
             case "Delete":
                 fileSystem.deleteFile();
@@ -195,9 +195,9 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         if(event.getSource() == propertyItem){
             fileSystem.fileProperty(node,treePath);
         }else if(event.getSource() == newFileItem){
-            fileSystem.newFile(node, treePath);
+            fileSystem.newItem(node, treePath,true);
         }else if(event.getSource() == newFolderItem){
-            fileSystem.newFolder(node, treePath);
+            fileSystem.newItem(node, treePath,false);
         }
     }
     
@@ -278,6 +278,10 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     }
     static DefaultTreeModel getTreeModel(){
         return treeModel;
+    }
+    
+    static JTree getJTree(){
+        return jTree;
     }
     
     static void insertNode(DefaultMutableTreeNode parent,DefaultMutableTreeNode children){
