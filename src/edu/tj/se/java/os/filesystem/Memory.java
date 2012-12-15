@@ -5,6 +5,8 @@
 package edu.tj.se.java.os.filesystem;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -13,34 +15,35 @@ import java.util.Date;
  */
 public class Memory {
     final int MAX_SIZE = 128;
-    public Data block[];
     public FAT fat[];
-    public FCB fcb[];
+    public Map fileMap;
     
     public Memory() {
-        block = new Data[MAX_SIZE];
+        fileMap = new HashMap();
         fat = new FAT[MAX_SIZE];
-        fcb = new FCB[MAX_SIZE];
         for(int i = 0;i < MAX_SIZE;i++){
-            block[i] = new Data();
             fat[i] = new FAT();
         }
     }
     
 }
 class Data{
-    final int MAX_FILE_LENGTH  = 256;
-    public char data[];
+    final int MAX_FILE_LENGTH  = 128;
+    public String text;
 
     public Data() {
-        data = new char[MAX_FILE_LENGTH];
-    }    
+       text = new String();
+    }  
+    
+    public void clear(){
+        text = "";
+    }
 }
 
 class FAT{
     public boolean isFATUsed;
-    public int nextDataPosition;
-    public int currentDataPosition;
+    public int nextBlock;
+    public int currentBlock;
 
     public FAT() {
         
@@ -48,8 +51,14 @@ class FAT{
     
     public void clear(){
         isFATUsed = false;
-        nextDataPosition = -1;
-        currentDataPosition = 0;
+    }
+    
+    public void setNextBlock(int block){
+        nextBlock = block;
+    }
+    
+    public void setCurrentBlock(int block){
+        currentBlock = block;
     }
 }
 
@@ -87,6 +96,17 @@ class FCB{
         size = sz;
     }
     
+}
+
+
+class FileBlock{
+    FCB fcb;
+    Data data;
+
+    public FileBlock() {
+        fcb = new FCB();
+        data = new Data();
+    }   
 }
 
 class TimeFormat{

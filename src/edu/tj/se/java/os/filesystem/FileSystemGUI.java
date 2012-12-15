@@ -8,6 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -17,7 +19,7 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @author lenovo
  */
-public class FileSystemGUI extends JFrame implements ActionListener{
+public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectionListener{
     
     final int WINDOW_SIZE_WIDTH = 500;
     final int WINDOW_SIZE_HEIGHT = 500;
@@ -27,12 +29,12 @@ public class FileSystemGUI extends JFrame implements ActionListener{
     //Upper Component
     static JPanel upperPanel = new JPanel();
     static JLabel pathLabel = new JLabel("Path:");
-    static JTextField pathField = new JTextField("X:\\");
+    static JTextField pathField = new JTextField("[X:\\]");
     
     //Center Component
     static JPanel middlePanel = new JPanel();   
     static JTextArea editArea = new JTextArea();
-    static DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("root");
+    static DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("X:\\");
     static DefaultTreeModel treeModel = new DefaultTreeModel(rootNode,true);
     static TreePath treePath;
     static JTree jTree = new JTree(rootNode);
@@ -53,7 +55,7 @@ public class FileSystemGUI extends JFrame implements ActionListener{
     FileSystem fileSystem = new FileSystem();
     
     public FileSystemGUI() {
-        super("File System By Lazy");
+        super("File System");
         drawGUI();
         addListener();
         fileSystem.newFileSystem();
@@ -84,17 +86,22 @@ public class FileSystemGUI extends JFrame implements ActionListener{
         jTree.setPreferredSize(new Dimension(TREE_SIZE_WIDTH, TREE_SIZE_HEIGHT));
         jTree.setEditable(false);
         rootNode.setAllowsChildren(true);
-        DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("example");
+        treePath = new TreePath(treeModel.getPathToRoot(rootNode));
+        fileSystem.addToMemory(rootNode, treePath);
+        DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("defaultFile");
         exampleNode.setAllowsChildren(false);
         rootNode.add(exampleNode);
+        treePath = new TreePath(treeModel.getPathToRoot(exampleNode));
+        fileSystem.addToMemory(exampleNode, treePath);
         jTree.setModel(treeModel);
         jTree.setShowsRootHandles(rootPaneCheckingEnabled);
+        jTree.addTreeSelectionListener(this);
         //treeScrollPane.getViewport().add(jTree,null);
         middlePanel.add(jTree,BorderLayout.WEST);
         middlePanel.add(editAreaScrollPane,BorderLayout.CENTER);
         editArea.setLineWrap(true);
         editArea.setWrapStyleWord(true);
-        editArea.setEditable(true);
+        editArea.setEditable(false);
         add(middlePanel,BorderLayout.CENTER);
         
         GridLayout gridLayout = new GridLayout(2, 4);
@@ -132,12 +139,14 @@ public class FileSystemGUI extends JFrame implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent event){
         String actionCommand = event.getActionCommand();
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)jTree.getLastSelectedPathComponent();
+        treePath = new TreePath(treeModel.getPathToRoot(node));
         switch(actionCommand){
             case "Property":
                 fileSystem.fileProperty();
                 break;
             case "Save":
-                fileSystem.saveFile();
+                fileSystem.saveFile(node,treePath);
                 break;
             case "New Folder":
                 fileSystem.newFolder();
@@ -158,6 +167,37 @@ public class FileSystemGUI extends JFrame implements ActionListener{
                 fileSystem.quitFile();
                 break;
         }
+    }
+    
+    @Override
+    public void valueChanged(TreeSelectionEvent se){
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)jTree.getLastSelectedPathComponent();
+        try {
+            if(!node.getAllowsChildren()){
+                newFileButton.setEnabled(false);
+                newFolderButton.setEnabled(false);
+                editArea.setEditable(true);
+            }else{
+                newFileButton.setEnabled(true);
+                newFolderButton.setEnabled(true);
+                editArea.setEditable(false);
+            }
+        } catch (NullPointerException e) {
+        }   
+        treePath = new TreePath(treeModel.getPathToRoot(node));
+        int blockPosition = fileSystem.getBlockPosition(treePath);
+        Memory memory = fileSystem.getMemory();
+        FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
+        String fileBlocktext = fileBlock.data.text;
+        String treePathToString = treePath.toString();
+        treePathToString = treePathToString.replace(",", "");
+        pathField.setText(treePathToString); 
+        editArea.setText(fileBlocktext);
+    }
+
+    static String getScreenText() {
+        String text = editArea.getText();
+        return text;
     }
     
     public static void main(String[] args) {
