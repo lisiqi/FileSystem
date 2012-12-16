@@ -133,6 +133,10 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
             file.addChoosableFileFilter(filter);
             file.showOpenDialog(null);
             diskFile = file.getSelectedFile();
+            if (diskFile == null) {
+                JOptionPane.showMessageDialog(null, "No file selected!");;
+                openMethod();
+            }
             diskFileName = diskFile.toString();
             if (!diskFileName.endsWith(".lazy")) {
                 JOptionPane.showMessageDialog(null, "Invalid file!");
@@ -166,7 +170,8 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     
     private void setLookAndFeel(){
         try{
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");    
+            String lookAndFeel = "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel";
+            UIManager.setLookAndFeel(lookAndFeel); 
         } catch(ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException exc) {
         // ignore error
         }

@@ -4,8 +4,7 @@
  */
 package edu.tj.se.java.os.filesystem;
 
-import com.sun.media.sound.ModelAbstractChannelMixer;
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
+
 import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
@@ -29,7 +28,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import sun.org.mozilla.javascript.internal.ast.Block;
 
 /**
  *
@@ -37,7 +35,7 @@ import sun.org.mozilla.javascript.internal.ast.Block;
  */
 public class FileSystem {
     final int MAX_SIZE = 128;
-    final double VERSION = 0.9;
+    final String VERSION = "1.0.2";
     
     Memory memory = new Memory();
     String pathArray[];
@@ -144,7 +142,7 @@ public class FileSystem {
         if (node.getChildCount() >= 0) {
            for (Enumeration e = node.children(); e.hasMoreElements(); ) {
                DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)e.nextElement();
-               if (childNode.getAllowsChildren()) {
+               if (!childNode.getAllowsChildren()) {
                    TreePath childPath = new TreePath(treeModel.getPathToRoot(childNode));
                    int blockPosition = getBlockPosition(childPath);
                    FileBlock block = (FileBlock)memory.fileMap.get(blockPosition);
