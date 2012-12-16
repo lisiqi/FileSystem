@@ -5,7 +5,13 @@
 package edu.tj.se.java.os.filesystem;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
+import java.awt.Desktop;
 import java.awt.GridLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
@@ -24,6 +30,7 @@ import javax.swing.tree.TreePath;
  */
 public class FileSystem {
     final int MAX_SIZE = 128;
+    final double VERSION = 0.9;
     
     Memory memory = new Memory();
     String pathArray[];
@@ -141,6 +148,21 @@ public class FileSystem {
         return false;
     }
     
+    public void deleteChild(DefaultMutableTreeNode node,TreePath path,DefaultTreeModel treeModel){
+        for(int i = 0;i < node.getChildCount();i++){
+            if(node.getChildAt(i).getAllowsChildren()){
+                deleteChild((DefaultMutableTreeNode)node.getChildAt(i), path,treeModel);
+            }else{
+                path = new TreePath(treeModel.getPathToRoot((DefaultMutableTreeNode)node.getChildAt(i)));
+                int blockPosition = getBlockPosition(path);
+                
+                memory.fileMap.remove(blockPosition);
+                memory.fat[blockPosition].isFATUsed = false;
+                memory.fat[blockPosition].currentBlock = -1;
+            }
+        }
+    }
+    
     public void fileProperty(DefaultMutableTreeNode node,TreePath path) {
         int blockPosition = getBlockPosition(path);
         FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
@@ -237,12 +259,70 @@ public class FileSystem {
         }
     }
     
-    public void renameFile(){
+    public void aboutFileSystem(){
+        JFrame frame = new JFrame("About");
+        frame.setSize(350,200);
+        frame.setVisible(true);
         
+        GridLayout gridLayout = new GridLayout(4, 1);
+        frame.setLayout(gridLayout);
+        
+        JLabel nameLabel = new JLabel("File System© V" + VERSION);
+        JLabel copyRightLabel = new JLabel("Created by Lazy at SSE.STJU");
+        final JLabel urlLabel = new JLabel("Project Address: https://github.com/liil444/FileSystem");
+        urlLabel.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent event){
+                URI uri;
+                try {
+                    uri = new URI("https://github.com/liil444/FileSystem");
+                    Desktop desktop = Desktop.getDesktop();
+                    
+                    if(Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.OPEN)){
+                        try {
+                            desktop.browse(uri);
+                        } catch (IOException e) {
+                            
+                        }
+                    }
+                } catch (URISyntaxException e) {
+                }
+            }
+            
+            public void mouseEntered(MouseEvent event){
+                
+            }
+            
+            public void mouseExited(MouseEvent event){
+                
+            }
+        });
+        
+        frame.add(nameLabel);
+        frame.add(copyRightLabel);
+        frame.add(urlLabel);
     }
     
-    public void deleteFile(){
+    public void deleteFile(DefaultMutableTreeNode node,TreePath path){
+        DefaultTreeModel treeModel = FileSystemGUI.getTreeModel();
+        int blockPosition = getBlockPosition(path);
+        FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
         
+        String rootName = "X:";
+        if(fileBlock.fcb.fileName.equals(rootName)){
+            JOptionPane.showMessageDialog(null, "Can't delete root folder!");
+            return;
+        }
+        
+        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode)node.getParent();
+        if(node.getAllowsChildren()){
+            deleteChild(node,path,treeModel);
+            treeModel.removeNodeFromParent(node);   
+        }else{
+            memory.fileMap.remove(blockPosition);
+            memory.fat[blockPosition].isFATUsed = false;
+            memory.fat[blockPosition].currentBlock = -1;
+            treeModel.removeNodeFromParent(node);            
+        }
     }
     
     public void formatFile(){

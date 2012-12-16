@@ -47,7 +47,9 @@ class FAT{
     public int currentBlock;
 
     public FAT() {
-        
+        isFATUsed = false;
+        nextBlock = -1;
+        currentBlock = -1;
     }
     
     public void clear(){

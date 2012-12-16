@@ -57,7 +57,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     static JButton saveButton = new JButton("Save");
     static JButton newFolderButton = new JButton("New Folder");
     static JButton newFileButton = new JButton("New File");
-    static JButton renameButton = new JButton("Rename");
+    static JButton aboutButton = new JButton("About");
     static JButton deleteButton = new JButton("Delete");
     static JButton formatButton = new JButton("Format");
     static JButton quitButton = new JButton("Quit");
@@ -102,6 +102,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("defaultFile");
         exampleNode.setAllowsChildren(false);
         rootNode.add(exampleNode);
+        treeModel.setRoot(rootNode);
         treePath = new TreePath(treeModel.getPathToRoot(exampleNode));
         fileSystem.addToMemory(exampleNode, treePath);
         jTree.setModel(treeModel);
@@ -120,10 +121,10 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         lowerPanel.add(propertyButton);
         lowerPanel.add(saveButton);
         lowerPanel.add(newFolderButton);
-        lowerPanel.add(newFileButton);
-        lowerPanel.add(renameButton);
+        lowerPanel.add(newFileButton);   
         lowerPanel.add(deleteButton);
         lowerPanel.add(formatButton);
+        lowerPanel.add(aboutButton);
         lowerPanel.add(quitButton);
         add(lowerPanel,BorderLayout.SOUTH);
         
@@ -147,7 +148,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         saveButton.addActionListener(this);
         newFolderButton.addActionListener(this);
         newFileButton.addActionListener(this);
-        renameButton.addActionListener(this);
+        aboutButton.addActionListener(this);
         deleteButton.addActionListener(this);
         formatButton.addActionListener(this);
         quitButton.addActionListener(this);
@@ -160,6 +161,15 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     @Override
     public void actionPerformed(ActionEvent event){
         String actionCommand = event.getActionCommand();
+        switch(actionCommand){
+            case "About":
+                fileSystem.aboutFileSystem();
+                break;
+            case "Quit":
+                fileSystem.quitFile();
+                break;   
+        }
+        
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)jTree.getLastSelectedPathComponent();
         if (node == null) {
             return;
@@ -178,19 +188,13 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 break;
             case "New File":
                 fileSystem.newFile(node,treePath);
-                break;
-            case "Rename":
-                fileSystem.renameFile();
-                break;
+                break;           
             case "Delete":
-                fileSystem.deleteFile();
+                fileSystem.deleteFile(node,treePath);
                 break;
             case "Format":
                 fileSystem.formatFile();
-                break;
-            case "Quit":
-                fileSystem.quitFile();
-                break;
+                break;           
         }
         if(event.getSource() == propertyItem){
             fileSystem.fileProperty(node,treePath);
