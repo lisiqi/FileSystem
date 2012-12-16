@@ -9,6 +9,9 @@ import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,10 +22,12 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+import sun.org.mozilla.javascript.internal.ast.Block;
 
 /**
  *
@@ -65,8 +70,10 @@ public class FileSystem {
             newFileBlock.fcb.startBlock = newBlock;
             if (node.getAllowsChildren()) {
                 newFileBlock.fcb.size = 0;
+                newFileBlock.fcb.hasChild = true;
             }else{
                 newFileBlock.fcb.size = text.length();
+                newFileBlock.fcb.hasChild = false;
             }
             newFileBlock.fcb.createTime = TimeFormat.getTimeFormat();
             
@@ -213,7 +220,7 @@ public class FileSystem {
     
     public void newFolder(DefaultMutableTreeNode node,TreePath path){
         String newFolderName = JOptionPane.showInputDialog(null, "Please input folder name");
-        if (newFolderName == null) {
+        if (newFolderName.equals("") || newFolderName == null) {
             JOptionPane.showMessageDialog(null, "Empty Operation!");
             return;
         }else if(newFolderName.length() > MAX_SIZE){
@@ -236,8 +243,8 @@ public class FileSystem {
     }
     
     public void newFile(DefaultMutableTreeNode node,TreePath path){
-        String newFileName = JOptionPane.showInputDialog(null, "Please input file name");
-        if (newFileName == null) {
+        String newFileName = JOptionPane.showInputDialog(null, "Please input file name");      
+        if (newFileName.equals("") || newFileName == null) {
             JOptionPane.showMessageDialog(null, "Empty Operation!");
             return;
         }else if(newFileName.length() > MAX_SIZE){
@@ -341,7 +348,98 @@ public class FileSystem {
         }   
     }
     
-    public void quitFile(){
-        
+    public void quitFile(DefaultMutableTreeNode node,String diskFileName){
+        int save = JOptionPane.showConfirmDialog(null, "Save file?");
+        if(save == 0){
+            diskFileName = appendString(diskFileName, ".lazy");
+            saveFileToDisk(node,diskFileName);
+            System.exit(0);
+        }else if(save == 1){
+            System.exit(0);
+        }else{
+            return;
+        }
+    }
+    
+    public void saveFileToDisk(DefaultMutableTreeNode node,String diskFileName){
+        try {
+            FileWriter writer = new FileWriter(diskFileName);
+            DefaultTreeModel model = FileSystemGUI.getTreeModel();
+            
+            Enumeration allNodes = node.preorderEnumeration();
+            while (allNodes.hasMoreElements()) {
+                String data = "";
+                DefaultMutableTreeNode nextNode = (DefaultMutableTreeNode)allNodes.nextElement();
+                TreePath path = new TreePath(model.getPathToRoot(nextNode));
+                int blockPosition = getBlockPosition(path);
+                FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
+                data = generateData(fileBlock);
+                writer.write(data);
+            }
+            JOptionPane.showMessageDialog(null, "File has been created, filename is " + diskFileName);
+            writer.close();
+        } catch (IOException e) {
+        }     
+    }
+    
+    public void reloadSource(String diskFileName){
+        try {
+            DefaultTreeModel model = FileSystemGUI.getTreeModel();
+            DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)model.getRoot();
+            BufferedReader reader = new BufferedReader(new FileReader(diskFileName));
+            String readLine;
+            while((readLine = reader.readLine()) != null){
+                String fcbArray[] = readLine.split("┬");
+                for(int i = 0;i < fcbArray.length;i++){
+//                    0:BlockNumber 
+//                    1:hasChild
+//                    2:size 
+//                    3:filename
+//                    4:createTime
+//                    5:path
+//                    6:modifiedTime
+//                    7:text  
+                    int blockNumber = Integer.valueOf(fcbArray[0]);
+                    pathArray[blockNumber] = fcbArray[5];
+                    FileBlock fileBlock = new FileBlock();
+                    fileBlock.data.text = fcbArray[7];
+                    fileBlock.fcb.createTime = fcbArray[4];
+                    fileBlock.fcb.fileName = fcbArray[3];
+                    fileBlock.fcb.filePath = fcbArray[5];
+                    fileBlock.fcb.hasChild = fcbArray[1].equals("true") ? true : false;
+                    fileBlock.fcb.modifiedTime = fcbArray[6];
+                    fileBlock.fcb.size = Integer.valueOf(fcbArray[2]);
+                    
+                }
+            }
+        } catch (IOException e) {
+        }
+    }
+    
+    private String generateData(FileBlock block){
+        String data = "";
+        data = appendString(data, String.valueOf(block.fcb.startBlock));
+        data = appendString(data, "┬");
+        data = appendString(data, String.valueOf(block.fcb.hasChild));
+        data = appendString(data, "┬");
+        data = appendString(data, String.valueOf(block.fcb.size));
+        data = appendString(data, "┬");
+        data = appendString(data, block.fcb.fileName);
+        data = appendString(data, "┬");
+        data = appendString(data, block.fcb.createTime);
+        data = appendString(data, "┬");
+        data = appendString(data, block.fcb.filePath);
+        data = appendString(data, "┬");
+        data = appendString(data, block.fcb.modifiedTime);
+        data = appendString(data, "┬");
+        data = appendString(data, block.data.text);
+        data = appendString(data, "┬");
+        data = appendString(data, "\n");
+        return data;
+    }
+    
+    private String appendString(String des,String src){
+        des = (new StringBuilder(des).append(src)).toString();
+        return des;
     }
 }

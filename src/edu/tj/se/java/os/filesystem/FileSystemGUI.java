@@ -10,8 +10,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FileFilter;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellEditor;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -63,11 +66,15 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     static JButton quitButton = new JButton("Quit");
     
     static FileSystem fileSystem = new FileSystem();
+    static File diskFile;
+    static String diskFileName;
     
     public FileSystemGUI() {
         super("File System");
         drawGUI();
+        initTree();
         addListener();
+        openMethod();
         fileSystem.newFileSystem();
     }
 
@@ -91,20 +98,8 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         
         BorderLayout middleBorderLayout = new BorderLayout();
         middlePanel.setLayout(middleBorderLayout);
-        jTree.setAutoscrolls(true);
-        jTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        jTree.setCellEditor(new DefaultTreeCellEditor(jTree, new DefaultTreeCellRenderer()));
-        jTree.setPreferredSize(new Dimension(TREE_SIZE_WIDTH, TREE_SIZE_HEIGHT));
-        jTree.setEditable(false);
-        rootNode.setAllowsChildren(true);
-        treePath = new TreePath(treeModel.getPathToRoot(rootNode));
-        fileSystem.addToMemory(rootNode, treePath);
-        treeModel.setRoot(rootNode);
-        jTree.setModel(treeModel);
-        jTree.setShowsRootHandles(rootPaneCheckingEnabled);
-        jTree.addTreeSelectionListener(this);
         //treeScrollPane.getViewport().add(jTree,null);
-        middlePanel.add(jTree,BorderLayout.WEST);
+        
         middlePanel.add(editAreaScrollPane,BorderLayout.CENTER);
         editArea.setLineWrap(true);
         editArea.setWrapStyleWord(true);
@@ -130,6 +125,44 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         popupMenuFile.add(propertyItem);
     }
     
+    private void openMethod(){
+        int showConfirmDialog = JOptionPane.showConfirmDialog(null, "Choose \"yes\" to open an existed file system or \"no\" to create a new file system");
+        if(showConfirmDialog == 0){
+            JFileChooser file = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("FileSystem file", "lazy");
+            file.addChoosableFileFilter(filter);
+            file.showOpenDialog(null);
+            diskFile = file.getSelectedFile();
+            diskFileName = diskFile.toString();
+            if (!diskFileName.endsWith(".lazy")) {
+                JOptionPane.showMessageDialog(null, "Invalid file!");
+                openMethod();
+            }else{
+                fileSystem.reloadSource(diskFileName);
+            }         
+        }else if(showConfirmDialog == 1){
+            diskFileName = TimeFormat.getNewFileName();
+            JOptionPane.showMessageDialog(null, "Now create a new File System!");
+        }else{
+            System.exit(0);
+        }  
+    }
+    
+    private void initTree(){
+        jTree.setAutoscrolls(true);
+        jTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        jTree.setCellEditor(new DefaultTreeCellEditor(jTree, new DefaultTreeCellRenderer()));
+        jTree.setPreferredSize(new Dimension(TREE_SIZE_WIDTH, TREE_SIZE_HEIGHT));
+        jTree.setEditable(false);
+        rootNode.setAllowsChildren(true);
+        treePath = new TreePath(treeModel.getPathToRoot(rootNode));
+        fileSystem.addToMemory(rootNode, treePath);
+        treeModel.setRoot(rootNode);
+        jTree.setModel(treeModel);
+        jTree.setShowsRootHandles(rootPaneCheckingEnabled);
+        jTree.addTreeSelectionListener(this);
+        middlePanel.add(jTree,BorderLayout.WEST);
+    }
     
     private void setLookAndFeel(){
         try{
@@ -162,7 +195,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 fileSystem.aboutFileSystem();
                 break;
             case "Quit":
-                fileSystem.quitFile();
+                fileSystem.quitFile(rootNode,diskFileName);
                 break;   
         }
         

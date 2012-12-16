@@ -73,7 +73,8 @@ class FCB{
     public String createTime;
     public String modifiedTime;
     public int startBlock;
-
+    public boolean hasChild;
+    
     public FCB() {
         startBlock = -1;
         fileName = null;
@@ -120,5 +121,14 @@ class TimeFormat{
         date = new Date();
         timeFormat = date.toString();
         return timeFormat;
+    }
+    
+    static public String getNewFileName(){
+        date = new Date();
+        timeFormat = date.toString();
+        String fileName = timeFormat.substring(11, 19);
+        fileName = fileName.replace(":", ""); 
+        System.out.println(fileName);
+        return fileName;
     }
 }
