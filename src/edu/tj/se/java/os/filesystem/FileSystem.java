@@ -325,8 +325,20 @@ public class FileSystem {
         }
     }
     
-    public void formatFile(){
-        
+    public void formatFile(DefaultMutableTreeNode node,TreePath path){
+        int showConfirmDialog = JOptionPane.showConfirmDialog(null, "Are you sure?");
+        if (showConfirmDialog == 0) {
+             DefaultTreeModel treeModel = FileSystemGUI.getTreeModel();
+            int blockPosition = getBlockPosition(path);
+            FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
+            if(node.getAllowsChildren()){
+                for(int i = 0;i < node.getChildCount();){
+                    DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)node.getChildAt(i);
+                    path = new TreePath(treeModel.getPathToRoot(childNode));
+                    deleteFile(childNode, path);
+                }
+            }
+        }   
     }
     
     public void quitFile(){

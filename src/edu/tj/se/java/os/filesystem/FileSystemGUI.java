@@ -62,7 +62,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
     static JButton formatButton = new JButton("Format");
     static JButton quitButton = new JButton("Quit");
     
-    FileSystem fileSystem = new FileSystem();
+    static FileSystem fileSystem = new FileSystem();
     
     public FileSystemGUI() {
         super("File System");
@@ -99,12 +99,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
         rootNode.setAllowsChildren(true);
         treePath = new TreePath(treeModel.getPathToRoot(rootNode));
         fileSystem.addToMemory(rootNode, treePath);
-        DefaultMutableTreeNode exampleNode = new DefaultMutableTreeNode("defaultFile");
-        exampleNode.setAllowsChildren(false);
-        rootNode.add(exampleNode);
         treeModel.setRoot(rootNode);
-        treePath = new TreePath(treeModel.getPathToRoot(exampleNode));
-        fileSystem.addToMemory(exampleNode, treePath);
         jTree.setModel(treeModel);
         jTree.setShowsRootHandles(rootPaneCheckingEnabled);
         jTree.addTreeSelectionListener(this);
@@ -134,6 +129,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
              
         popupMenuFile.add(propertyItem);
     }
+    
     
     private void setLookAndFeel(){
         try{
@@ -193,7 +189,7 @@ public class FileSystemGUI extends JFrame implements ActionListener,TreeSelectio
                 fileSystem.deleteFile(node,treePath);
                 break;
             case "Format":
-                fileSystem.formatFile();
+                fileSystem.formatFile(rootNode,treePath);
                 break;           
         }
         if(event.getSource() == propertyItem){
