@@ -74,6 +74,7 @@ class FCB{
     public String modifiedTime;
     public int startBlock;
     public boolean hasChild;
+    public int itemNumber;
     
     public FCB() {
         startBlock = -1;
@@ -100,6 +101,9 @@ class FCB{
         size = sz;
     }
 
+    public void setItem(int number){
+        itemNumber = number;
+    }
 }
 
 
@@ -128,6 +132,7 @@ class TimeFormat{
         timeFormat = date.toString();
         String fileName = timeFormat.substring(11, 19);
         fileName = fileName.replace(":", ""); 
+        fileName = (new StringBuilder(fileName).append(".lazy")).toString();
         System.out.println(fileName);
         return fileName;
     }

@@ -4,12 +4,14 @@
  */
 package edu.tj.se.java.os.filesystem;
 
+import com.sun.media.sound.ModelAbstractChannelMixer;
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -174,7 +176,7 @@ public class FileSystem {
         int blockPosition = getBlockPosition(path);
         FileBlock fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
         String frameTitle = fileBlock.fcb.fileName;
-        int childCount = node.getChildCount();
+        int childCount = fileBlock.fcb.itemNumber;
         
         JFrame frame = new JFrame(frameTitle);
         frame.setSize(500, 300);
@@ -233,6 +235,13 @@ public class FileSystem {
             JOptionPane.showMessageDialog(null, "Sorry, but the name exists in current path!");
             return;
         }else{
+            
+            int itemNumber = node.getChildCount();
+            int blockPosition = getBlockPosition(path);
+            FileBlock parentBlock = (FileBlock)memory.fileMap.get(blockPosition);
+            parentBlock.fcb.itemNumber++;
+            memory.fileMap.put(blockPosition, parentBlock);
+            
             DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(newFolderName);
             newNode.setAllowsChildren(true);
             FileSystemGUI.insertNode(node, newNode);
@@ -256,13 +265,22 @@ public class FileSystem {
         }else if(hasTheSameFileNameInPath(newFileName, node, path)){
             JOptionPane.showMessageDialog(null, "Sorry, but the name exists in current path!");
             return;
-        }else{
+        }else{       
+            
+            int itemNumber = node.getChildCount();
+            int blockPosition = getBlockPosition(path);
+            FileBlock parentBlock = (FileBlock)memory.fileMap.get(blockPosition);
+            parentBlock.fcb.itemNumber++;
+            memory.fileMap.put(blockPosition, parentBlock);
+            
             DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(newFileName);
             newNode.setAllowsChildren(false);
             FileSystemGUI.insertNode(node, newNode);
             DefaultTreeModel model = FileSystemGUI.getTreeModel();
             path = new TreePath(model.getPathToRoot(newNode));
             addToMemory(newNode, path);
+            
+            
         }
     }
     
@@ -330,6 +348,11 @@ public class FileSystem {
             memory.fat[blockPosition].currentBlock = -1;
             treeModel.removeNodeFromParent(node);            
         }
+        path = new TreePath(treeModel.getPathToRoot(parentNode));
+        blockPosition = getBlockPosition(path);
+        fileBlock = (FileBlock)memory.fileMap.get(blockPosition);
+        fileBlock.fcb.itemNumber--;
+        memory.fileMap.put(blockPosition, fileBlock);
     }
     
     public void formatFile(DefaultMutableTreeNode node,TreePath path){
@@ -351,7 +374,6 @@ public class FileSystem {
     public void quitFile(DefaultMutableTreeNode node,String diskFileName){
         int save = JOptionPane.showConfirmDialog(null, "Save file?");
         if(save == 0){
-            diskFileName = appendString(diskFileName, ".lazy");
             saveFileToDisk(node,diskFileName);
             System.exit(0);
         }else if(save == 1){
@@ -384,36 +406,77 @@ public class FileSystem {
     
     public void reloadSource(String diskFileName){
         try {
+            BufferedReader reader = new BufferedReader(new FileReader(diskFileName));          
+            String readLine = reader.readLine();
+            FileBlock fileBlock = new FileBlock();     
             DefaultTreeModel model = FileSystemGUI.getTreeModel();
-            DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)model.getRoot();
-            BufferedReader reader = new BufferedReader(new FileReader(diskFileName));
-            String readLine;
-            while((readLine = reader.readLine()) != null){
-                String fcbArray[] = readLine.split("┬");
-                for(int i = 0;i < fcbArray.length;i++){
-//                    0:BlockNumber 
-//                    1:hasChild
-//                    2:size 
-//                    3:filename
-//                    4:createTime
-//                    5:path
-//                    6:modifiedTime
-//                    7:text  
-                    int blockNumber = Integer.valueOf(fcbArray[0]);
-                    pathArray[blockNumber] = fcbArray[5];
-                    FileBlock fileBlock = new FileBlock();
-                    fileBlock.data.text = fcbArray[7];
-                    fileBlock.fcb.createTime = fcbArray[4];
-                    fileBlock.fcb.fileName = fcbArray[3];
-                    fileBlock.fcb.filePath = fcbArray[5];
-                    fileBlock.fcb.hasChild = fcbArray[1].equals("true") ? true : false;
-                    fileBlock.fcb.modifiedTime = fcbArray[6];
-                    fileBlock.fcb.size = Integer.valueOf(fcbArray[2]);
-                    
+            DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)model.getRoot();  
+            fileBlock = recoverData(readLine, model);
+            while ((readLine = reader.readLine()) != null){
+                fileBlock = recoverData(readLine, model);
+                DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(fileBlock.fcb.fileName);
+                newNode.setAllowsChildren(fileBlock.fcb.hasChild);
+
+                TreePath parentPath = new TreePath(model.getPathToRoot(rootNode));
+                int parentBlockNumber = getBlockPosition(parentPath);
+                FileBlock parentBlock = (FileBlock)memory.fileMap.get(parentBlockNumber);
+
+                FileSystemGUI.insertNode(rootNode, newNode);
+
+                if(newNode.getAllowsChildren() && newNode.getChildCount() != fileBlock.fcb.itemNumber){
+                    recoverAllPoint(reader, model, newNode);
                 }
             }
         } catch (IOException e) {
         }
+    }
+    
+    public void recoverAllPoint(BufferedReader reader,DefaultTreeModel model,DefaultMutableTreeNode node){
+        try {     
+            FileBlock fileBlock = new FileBlock();
+            String readLine;
+            while ((readLine = reader.readLine()) != null) {                
+                fileBlock = recoverData(readLine, model);
+                DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(fileBlock.fcb.fileName);
+                newNode.setAllowsChildren(fileBlock.fcb.hasChild);
+
+                TreePath parentPath = new TreePath(model.getPathToRoot(node));
+                int parentBlockNumber = getBlockPosition(parentPath);
+                FileBlock parentBlock = (FileBlock)memory.fileMap.get(parentBlockNumber);
+
+                FileSystemGUI.insertNode(node, newNode);
+
+                if(newNode.getAllowsChildren() && newNode.getChildCount() != fileBlock.fcb.itemNumber){
+                    recoverAllPoint(reader, model, newNode);
+                }
+                if(node.getChildCount() == parentBlock.fcb.itemNumber){           
+                    return;
+                }
+            }       
+        } catch (IOException e) {
+        }
+        
+    }
+    
+    private FileBlock recoverData(String readLine,DefaultTreeModel model){
+        FileBlock fileBlock = new FileBlock();
+        String fcbArray[] = readLine.split("┬");
+        int blockNumber = Integer.valueOf(fcbArray[0]);
+        pathArray[blockNumber] = fcbArray[5];
+        fileBlock.data.text = fcbArray[7];
+        fileBlock.fcb.createTime = fcbArray[4];
+        fileBlock.fcb.fileName = fcbArray[3];
+        fileBlock.fcb.filePath = fcbArray[5];
+        fileBlock.fcb.hasChild = fcbArray[1].equals("true") ? true : false;
+        fileBlock.fcb.modifiedTime = fcbArray[6];
+        fileBlock.fcb.size = Integer.valueOf(fcbArray[2]);
+        fileBlock.fcb.startBlock = blockNumber;
+        fileBlock.fcb.itemNumber = Integer.valueOf(fcbArray[8]);
+        memory.fat[blockNumber].isFATUsed = true;
+        memory.fat[blockNumber].currentBlock = blockNumber;
+        memory.fileMap.remove(blockNumber);
+        memory.fileMap.put(blockNumber,fileBlock);
+        return fileBlock;
     }
     
     private String generateData(FileBlock block){
@@ -433,6 +496,8 @@ public class FileSystem {
         data = appendString(data, block.fcb.modifiedTime);
         data = appendString(data, "┬");
         data = appendString(data, block.data.text);
+        data = appendString(data, "┬");
+        data = appendString(data, String.valueOf(block.fcb.itemNumber));
         data = appendString(data, "┬");
         data = appendString(data, "\n");
         return data;
